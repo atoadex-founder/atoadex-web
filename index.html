@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AtoaDEX v1.9.8 — Insured & Circuit-Broken Hybrid ve(3,3) DEX on Sui</title>
+  <style>
+    :root {
+      --bg: #050a14;
+      --surface: #0b1324;
+      --surface-2: #111d36;
+      --border: #1e3156;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body { background: radial-gradient(circle at top, #0d1b36 0%, var(--bg) 55%); color: var(--text); min-height: 100vh; padding: 14px; }
+    .container { max-width: 1040px; margin: 0 auto; }
+
+    /* Top Navbar */
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(11,19,36,0.85); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #38bdf8, #0284c7); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #04101f; font-size: 1.1rem; }
+    .brand-name { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; }
+    .pill { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(16,185,129,0.15); color: var(--emerald); border: 1px solid rgba(16,185,129,0.35); }
+    .wallet-btn { background: linear-gradient(135deg, #38bdf8, #0284c7); color: #04101f; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 0.86rem; cursor: pointer; transition: 0.2s; }
+    .wallet-btn.connected { background: rgba(16,185,129,0.2); color: var(--emerald); border: 1px solid var(--emerald); }
+
+    /* Hero Banner */
+    .hero { text-align: center; padding: 16px 8px 24px; }
+    .hero h1 { font-size: clamp(1.55rem, 4vw, 2.35rem); font-weight: 900; line-height: 1.2; margin-bottom: 10px; background: linear-gradient(to right, #ffffff, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { color: var(--muted); max-width: 700px; margin: 0 auto 16px; font-size: 0.94rem; }
+    .hero-links { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .chip-link { color: var(--primary); background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3); padding: 7px 14px; border-radius: 10px; text-decoration: none; font-size: 0.82rem; font-weight: 600; }
+
+    /* Main Grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 18px; margin-bottom: 24px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.35); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 6px; background: var(--bg); padding: 5px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border); }
+    .tab { flex: 1; padding: 8px; border: none; background: transparent; color: var(--muted); font-weight: 700; font-size: 0.82rem; border-radius: 9px; cursor: pointer; }
+    .tab.active { background: var(--surface-2); color: var(--primary); border: 1px solid rgba(56,189,248,0.35); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* Form Controls */
+    .field { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+    .field-top { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); margin-bottom: 6px; }
+    .field-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    input[type="number"], input[type="text"] { background: transparent; border: none; color: var(--text); font-size: 1.25rem; font-weight: 800; width: 100%; outline: none; }
+    select { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 7px 10px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; }
+    .action-btn { width: 100%; padding: 13px; border-radius: 14px; border: none; background: linear-gradient(135deg, #38bdf8, #0284c7); color: #04101f; font-weight: 800; font-size: 0.95rem; cursor: pointer; margin-top: 6px; }
+
+    /* Breakdown List */
+    .breakdown { list-style: none; margin-top: 12px; background: rgba(5,10,20,0.6); border-radius: 12px; padding: 10px 12px; font-size: 0.8rem; }
+    .breakdown li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #162542; }
+    .breakdown li:last-child { border-bottom: none; }
+
+    /* Telemetry Cards */
+    .metric { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+    .metric-label { font-size: 0.76rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .metric-val { font-size: 1.45rem; font-weight: 900; margin: 4px 0; }
+    .metric-desc { font-size: 0.8rem; color: var(--muted); }
+    .progress-bar { height: 8px; background: #162542; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+    .progress-fill { height: 100%; width: 12%; background: var(--emerald); transition: width 0.3s; }
+
+    /* Toast Notification */
+    .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #0f172a; border: 1px solid var(--emerald); color: var(--text); padding: 12px 18px; border-radius: 12px; font-size: 0.84rem; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.6); display: none; z-index: 999; max-width: 92%; text-align: center; }
+
+    footer { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 18px 0 8px; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <div class="brand">
+        <div class="logo-icon">A</div>
+        <div>
+          <div class="brand-name">AtoaDEX <span class="pill">v1.9.8 Testnet UI</span></div>
+        </div>
+      </div>
+      <button class="wallet-btn" id="walletBtn" onclick="toggleWallet()">Connect Sui Wallet</button>
+    </nav>
+
+    <section class="hero">
+      <h1>Insured &amp; Circuit-Broken Hybrid ve(3,3) DEX on Sui</h1>
+      <p>Built for institutional stablecoins (AUSD, USDY, BUCK) and Sui's 4-Throne LSTs (haSUI, vSUI, sSUI, afSUI) with hardcoded 10.00% epoch exploit containment and a self-healing 2,500,000 $ATOA insurance vault.</p>
+      <div class="hero-links">
+        <a class="chip-link" href="https://github.com" target="_blank">Sui Move Smart Contracts</a>
+        <a class="chip-link" href="https://x.com" target="_blank">Official X (@AtoaDEX_Sui)</a>
+      </div>
+    </section>
+
+    <div class="grid">
+      <!-- Left Card: Interactive DEX dApp -->
+      <div class="card">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('swap', this)">Swap</button>
+          <button class="tab" onclick="switchTab('liquidity', this)">Liquidity &amp; Queue</button>
+          <button class="tab" onclick="switchTab('veatoa', this)">veATOA Lock</button>
+        </div>
+
+        <!-- Tab 1: Swap -->
+        <div id="panel-swap" class="panel active">
+          <div class="field">
+            <div class="field-top"><span>Pay (0.02% StableSwap Tier)</span><span>Bal: 25,000.00</span></div>
+            <div class="field-row">
+              <input type="number" id="swapIn" value="10000" oninput="updateSwap()" />
+              <select id="tokenIn" onchange="updateSwap()">
+                <option>USDC</option><option>USDY</option><option>AUSD</option><option>haSUI</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-top"><span>Receive (Net Output)</span><span>Slippage: 0.01%</span></div>
+            <div class="field-row">
+              <input type="text" id="swapOut" value="9,998.00" readonly />
+              <select id="tokenOut" onchange="updateSwap()">
+                <option>AUSD</option><option>USDC</option><option>USDY</option><option>SUI</option>
+              </select>
+            </div>
+          </div>
+          <ul class="breakdown" id="feeList"></ul>
+          <button class="action-btn" onclick="executeDemo('Swap routed via 35/20/15/19/5/6 canonical fee splitter!')">Execute Testnet Swap</button>
+        </div>
+
+        <!-- Tab 2: Liquidity & 24h Whale Queue -->
+        <div id="panel-liquidity" class="panel">
+          <div class="field">
+            <div class="field-top"><span>Withdraw LP Position (% of Pool TVL)</span><span>Cap: 10.00%/Epoch</span></div>
+            <div class="field-row">
+              <input type="number" id="withdrawPct" value="12" min="1" max="100" oninput="checkCircuitBreaker()" />
+              <span style="font-weight:800; color:var(--primary);">% TVL</span>
+            </div>
+          </div>
+          <div id="breakerStatus" class="metric" style="border-color: var(--amber);">
+            <div class="metric-label">Circuit Breaker &amp; Queue Routing</div>
+            <div class="metric-val" style="color: var(--amber); font-size: 1.05rem;">&gt;10% Epoch Cap -> 24-Hour Whale Queue</div>
+            <div class="metric-desc">Same-Address Return Lock enforced. 90.00% of pool liquidity remains isolated and safe.</div>
+          </div>
+          <button class="action-btn" onclick="executeDemo('Withdrawal ticket created with 24-Hour Timelock & Same-Address Return Lock!')">Request Protected Withdrawal</button>
+        </div>
+
+        <!-- Tab 3: veATOA Vote-Escrow -->
+        <div id="panel-veatoa" class="panel">
+          <div class="field">
+            
