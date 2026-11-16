@@ -150,4 +150,63 @@
         <!-- Tab 3: veATOA Vote-Escrow -->
         <div id="panel-veatoa" class="panel">
           <div class="field">
-            
+                <div class="field-top"><span>Lock $ATOA Amount</span><span>4-Year Max Lock</span></div>
+            <div class="field-row">
+              <input type="number" id="lockAmt" value="50000" oninput="updateVeAtoa()" />
+              <span style="font-weight:800; color:var(--primary);">$ATOA</span>
+            </div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Voting Power &amp; Real-Yield Share</div>
+            <div class="metric-val" id="vePower" style="color: var(--emerald);">50,000 veATOA</div>
+            <div class="metric-desc">Earns 20.00% of all protocol swap fees + 95.00% of weekly ecosystem bribes.</div>
+          </div>
+          <button class="action-btn" onclick="executeDemo('veATOA Vote-Escrow NFT minted! Eligible for weekly swap fees & bribe gauges.')">Lock $ATOA for veATOA</button>
+        </div>
+      </div>
+
+      <!-- Right Card: 4-Pillar Institutional Safe Harbor -->
+      <div class="card">
+        <h2 style="font-size:1.05rem; color:var(--primary); margin-bottom:14px;">4-Pillar Institutional Safe Harbor</h2>
+        <div class="metric">
+          <div class="metric-label">1. Self-Healing 1:1 rATOA Insurance Vault</div>
+          <div class="metric-val" style="color:var(--emerald);">2,500,000 $ATOA</div>
+          <div class="metric-desc">$400,000 Day-1 Seed + 5.00% Permanent Swap Fee Stream</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">2. Epoch Outflow Circuit Breaker Monitor</div>
+          <div class="metric-val" style="color:var(--primary);">1.20% / 10.00% Used</div>
+          <div class="metric-desc">Current Epoch Outflow Safe. Auto-freezes pool at 10.00% breach.</div>
+          <div class="progress-bar"><div class="progress-fill"></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">3. Sovereign Locked POL &amp; Day-1 Burn</div>
+          <div class="metric-val" style="color:var(--amber);">$1,079,360 Locked POL</div>
+          <div class="metric-desc">70.00% Immutable Principal + 19.00% Open-Market Burn (0x0)</div>
+        </div>
+        <div class="metric" style="margin-bottom:0;">
+          <div class="metric-label">4. Institutional Compliance &amp; Safe Harbor</div>
+          <div class="metric-desc" style="color:var(--text); margin-top:4px;">SEAL White-Hat Safe Harbor &bull; OFAC/AMLA Frontend Screening &bull; 48h Timelocked Upgrades</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- On-Chain Transparency & Proof of Reserves -->
+    <div class="card" style="margin-bottom:18px;">
+      <h2 style="font-size:1.05rem; color:var(--primary); margin-bottom:10px;">On-Chain Transparency &amp; Genesis Proof of Reserves (100M $ATOA)</h2>
+      <p style="color:var(--muted); font-size:0.84rem; line-height:1.7; margin-bottom:10px;">
+        &bull; <strong style="color:var(--text);">70.00% Genesis Locked POL ($1,079,360):</strong> Immutable principal liquidity.<br>
+        &bull; <strong style="color:var(--text);">15.00% Public IDO ($1,541,943):</strong> Fair public price discovery.<br>
+        &bull; <strong style="color:var(--text);">8.00% Ecosystem &amp; Security Audits:</strong> MoveBit / OtterSec &amp; Sui ecosystem incentives.<br>
+        &bull; <strong style="color:var(--text);">4.50% Founder &amp; Core Team:</strong> 4-year linear vesting (1-year cliff).<br>
+        &bull; <strong style="color:var(--text);">2.50% Day-1 Insurance Seed (2,500,000 $ATOA):</strong> Perpetual rATOA self-healing reserve floor.
+      </p>
+      <a class="chip-link" href="https://github.com" target="_blank">Verify Open-Source Sui Move Contracts on GitHub &rarr;</a>
+    </div>
+
+    <footer>AtoaDEX Labs &bull; Built on Sui Network &bull; Contact: founder.atoadex@proton.me</footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+  </html>
+
