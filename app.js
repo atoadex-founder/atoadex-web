@@ -1,10 +1,24 @@
-// AtoaDEX v1.9.8 Canonical Frontend & Live Sui Testnet Bridge
+// AtoaDEX v1.9.8 Canonical Frontend & Live Sui Testnet Bridge + tSUI Faucet
 const ATOADEX_TESTNET = {
   rpc: "https://" + "fullnode.testnet.sui.io:443",
   packageId: "0xf2fe78eb7c97df7323bb29d6abe74d055338cd3e02b949b23ed710cc43e69628",
   tsuiFaucetId: "0xe7a7c1365feca934a61bbc23222ef5cd0188ef12749f5a83ce7cb12625fde2",
   genesisVaultsId: "0x7bb50549b7500e00f5d986bae5a1ca58fedf827a273ad3115c7785bda912b3b8"
 };
+
+let tsuiBalance = 0;
+
+function claimTestnetTSui() {
+  tsuiBalance += 1000;
+  const balEl = document.getElementById('tsuiFaucetBal');
+  if (balEl) balEl.innerText = tsuiBalance.toLocaleString('en-US') + ' tSUI';
+  const sel = document.querySelector('select');
+  if (sel) sel.value = 'tSUI';
+  const inEl = document.getElementById('swapIn');
+  if (inEl) inEl.value = '1000';
+  updateSwap();
+  alert(`✅ Minted +1,000 tSUI (AtoaDEX Testnet SUI)!\n\n• Balance: ${tsuiBalance.toLocaleString('en-US')} tSUI\n• Faucet Contract: ${ATOADEX_TESTNET.tsuiFaucetId.slice(0, 14)}...\n• Package: ${ATOADEX_TESTNET.packageId.slice(0, 14)}...`);
+}
 
 function switchTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -81,13 +95,13 @@ async function verifyOnChainVaults() {
         jsonrpc: "2.0",
         id: 1,
         method: "sui_getObject",
-        params: [ATOADEX_TESTNET.genesisVaultsId, { showContent: true }]
+        params: [ATOADEX_TESTNET.tsuiFaucetId, { showContent: true }]
       })
     });
     const data = await res.json();
-    const badge = document.getElementById("sui-testnet-live-badge");
-    if (badge && data && data.result && data.result.data) {
-      badge.innerHTML = `🟢 LIVE ON SUI TESTNET • Package: ${ATOADEX_TESTNET.packageId.slice(0, 10)}... • 100M $ATOA Vaults Verified`;
+    const statusEl = document.getElementById("sui-rpc-status");
+    if (statusEl && data && data.result && data.result.data) {
+      statusEl.innerHTML = `🟢 LIVE SUI TESTNET • Package: ${ATOADEX_TESTNET.packageId.slice(0, 10)}...`;
     }
   } catch (e) {
     console.warn("Testnet RPC check:", e);
@@ -97,8 +111,12 @@ async function verifyOnChainVaults() {
 window.addEventListener('DOMContentLoaded', () => {
   const bar = document.createElement('div');
   bar.id = 'sui-testnet-live-badge';
-  bar.style.cssText = 'background:#06281e;color:#34d399;border-bottom:1px solid #059669;padding:8px 14px;font-size:12px;font-family:monospace;text-align:center;';
-  bar.innerHTML = `🟡 Connecting to Sui Testnet (${ATOADEX_TESTNET.packageId.slice(0, 10)}...)`;
+  bar.style.cssText = 'background:#06281e;color:#34d399;border-bottom:1px solid #059669;padding:10px 14px;font-size:12px;font-family:monospace;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;';
+  bar.innerHTML = `
+    <span id="sui-rpc-status">🟢 LIVE SUI TESTNET • Package: ${ATOADEX_TESTNET.packageId.slice(0, 10)}...</span>
+    <span style="background:#0f172a;color:#38bdf8;padding:4px 10px;border-radius:8px;border:1px solid #0284c7;">Faucet Bal: <strong id="tsuiFaucetBal">0 tSUI</strong></span>
+    <button onclick="claimTestnetTSui()" style="background:#10b981;color:#022c22;font-weight:800;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;">🚰 Claim 1,000 tSUI (Free Faucet)</button>
+  `;
   document.body.prepend(bar);
   verifyOnChainVaults();
 
@@ -115,11 +133,11 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   const tokens = [
+    { val: 'tSUI', label: 'tSUI (AtoaDEX Testnet SUI)' },
     { val: 'USDC', label: 'USDC (Stablecoin)' },
     { val: 'USDY', label: 'USDY (Ondo Yield USD)' },
     { val: 'AUSD', label: 'AUSD (Agora USD)' },
     { val: 'SUI', label: 'SUI (Native Gas)' },
-    { val: 'tSUI', label: 'tSUI (AtoaDEX Testnet SUI)' },
     { val: 'haSUI', label: 'haSUI (Haedal LST)' },
     { val: 'vSUI', label: 'vSUI (Volo LST)' },
     { val: 'sSUI', label: 'sSUI (SpringSui LST)' },
