@@ -1,4 +1,4 @@
-// AtoaDEX v1.9.8 Canonical Frontend & Live Sui Testnet Bridge + tSUI Faucet
+// AtoaDEX v1.9.8 Canonical Frontend & Live Sui Testnet Bridge + Persistent Session
 const ATOADEX_TESTNET = {
   rpc: "https://" + "fullnode.testnet.sui.io:443",
   packageId: "0xf2fe78eb7c97df7323bb29d6abe74d055338cd3e02b949b23ed710cc43e69628",
@@ -6,10 +6,11 @@ const ATOADEX_TESTNET = {
   genesisVaultsId: "0x7bb50549b7500e00f5d986bae5a1ca58fedf827a273ad3115c7785bda912b3b8"
 };
 
-let tsuiBalance = 0;
+let tsuiBalance = parseInt(localStorage.getItem('atoadex_tsui_bal') || '0', 10);
 
 function claimTestnetTSui() {
   tsuiBalance += 1000;
+  localStorage.setItem('atoadex_tsui_bal', String(tsuiBalance));
   const balEl = document.getElementById('tsuiFaucetBal');
   if (balEl) balEl.innerText = tsuiBalance.toLocaleString('en-US') + ' tSUI';
   const sel = document.querySelector('select');
@@ -17,7 +18,7 @@ function claimTestnetTSui() {
   const inEl = document.getElementById('swapIn');
   if (inEl) inEl.value = '1000';
   updateSwap();
-  alert(`✅ Minted +1,000 tSUI (AtoaDEX Testnet SUI)!\n\n• Balance: ${tsuiBalance.toLocaleString('en-US')} tSUI\n• Faucet Contract: ${ATOADEX_TESTNET.tsuiFaucetId.slice(0, 14)}...\n• Package: ${ATOADEX_TESTNET.packageId.slice(0, 14)}...`);
+  alert(`✅ Minted +1,000 tSUI (AtoaDEX Testnet SUI)!\n\n• Saved Balance: ${tsuiBalance.toLocaleString('en-US')} tSUI\n• Faucet Contract: ${ATOADEX_TESTNET.tsuiFaucetId.slice(0, 14)}...`);
 }
 
 function switchTab(name, btn) {
@@ -73,13 +74,23 @@ function updateVeAtoa() {
   if (powerEl) powerEl.innerText = amt.toLocaleString('en-US') + ' veATOA';
 }
 
-function toggleWallet() {
+function applyWalletState(isConn) {
   const btn = document.getElementById('walletBtn');
   if (!btn) return;
-  btn.classList.toggle('connected');
-  const isConn = btn.classList.contains('connected');
-  btn.innerText = isConn ? '0xATOA...v198 (Sui Testnet)' : 'Connect Sui Wallet';
-  executeDemo(isConn ? 'Sui Testnet Wallet connected to Package ' + ATOADEX_TESTNET.packageId.slice(0, 10) + '...' : 'Wallet disconnected.');
+  if (isConn) {
+    btn.classList.add('connected');
+    btn.innerText = '0xATOA...v198 (Sui Testnet)';
+  } else {
+    btn.classList.remove('connected');
+    btn.innerText = 'Connect Sui Wallet';
+  }
+}
+
+function toggleWallet() {
+  const nextState = localStorage.getItem('atoadex_wallet_conn') !== '1';
+  localStorage.setItem('atoadex_wallet_conn', nextState ? '1' : '0');
+  applyWalletState(nextState);
+  executeDemo(nextState ? 'Sui Testnet Wallet connected & saved!' : 'Wallet disconnected.');
 }
 
 function executeDemo(msg) {
@@ -114,12 +125,13 @@ window.addEventListener('DOMContentLoaded', () => {
   bar.style.cssText = 'background:#06281e;color:#34d399;border-bottom:1px solid #059669;padding:10px 14px;font-size:12px;font-family:monospace;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;';
   bar.innerHTML = `
     <span id="sui-rpc-status">🟢 LIVE SUI TESTNET • Package: ${ATOADEX_TESTNET.packageId.slice(0, 10)}...</span>
-    <span style="background:#0f172a;color:#38bdf8;padding:4px 10px;border-radius:8px;border:1px solid #0284c7;">Faucet Bal: <strong id="tsuiFaucetBal">0 tSUI</strong></span>
+    <span style="background:#0f172a;color:#38bdf8;padding:4px 10px;border-radius:8px;border:1px solid #0284c7;">Faucet Bal: <strong id="tsuiFaucetBal">${tsuiBalance.toLocaleString('en-US')} tSUI</strong></span>
     <button onclick="claimTestnetTSui()" style="background:#10b981;color:#022c22;font-weight:800;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;">🚰 Claim 1,000 tSUI (Free Faucet)</button>
   `;
   document.body.prepend(bar);
   verifyOnChainVaults();
 
+  applyWalletState(localStorage.getItem('atoadex_wallet_conn') === '1');
   updateSwap();
   checkCircuitBreaker();
   updateVeAtoa();
