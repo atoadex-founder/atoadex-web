@@ -72,3 +72,12 @@ window.addEventListener('DOMContentLoaded', () => {
   checkCircuitBreaker();
   updateVeAtoa();
 });
+window.addEventListener('DOMContentLoaded', () => {
+  const footer = document.querySelector('footer');
+  if (footer) {
+    const disc = document.createElement('div');
+    disc.style.cssText = 'max-width:1040px; margin:18px auto 8px; padding:16px; background:#070d19; border:1px solid #1e293b; border-radius:14px; color:#64748b; font-size:0.74rem; line-height:1.55; text-align:left;';
+    disc.innerHTML = `<strong style="color:#94a3b8;">LEGAL &amp; RISK DISCLAIMER (TESTNET MVP):</strong> AtoaDEX is an open-source, non-custodial decentralized protocol interface currently operating in <strong>Testnet Simulation Mode</strong>. Nothing on this website constitutes financial, investment, legal, or tax advice, nor an offer or solicitation to buy or sell securities or digital assets. DeFi protocols carry smart-contract, market, and liquidity risks; while AtoaDEX incorporates a 10.00% epoch circuit breaker, 24-hour whale queue, and rATOA reserve vault, no mechanism guarantees zero loss. Access is restricted in sanctioned jurisdictions (OFAC / UN / EU / AMLA).`;
+    footer.parentNode.insertBefore(disc, footer);
+  }
+});
