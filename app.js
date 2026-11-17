@@ -81,3 +81,21 @@ window.addEventListener('DOMContentLoaded', () => {
     footer.parentNode.insertBefore(disc, footer);
   }
 });
+window.addEventListener('DOMContentLoaded', () => {
+  const tokens = [
+    { val: 'USDC', label: 'USDC (Stablecoin)' },
+    { val: 'USDY', label: 'USDY (Ondo Yield USD)' },
+    { val: 'AUSD', label: 'AUSD (Agora USD)' },
+    { val: 'SUI', label: 'SUI (Native Gas)' },
+    { val: 'haSUI', label: 'haSUI (Haedal LST)' },
+    { val: 'vSUI', label: 'vSUI (Volo LST)' },
+    { val: 'sSUI', label: 'sSUI (SpringSui LST)' },
+    { val: 'afSUI', label: 'afSUI (Aftermath LST)' },
+    { val: 'ATOA', label: 'ATOA ($0.16 IDO Ref)' }
+  ];
+
+  document.querySelectorAll('select').forEach((sel, idx) => {
+    sel.innerHTML = tokens.map(t => `<option value="${t.val}">${t.label}</option>`).join('');
+    if (idx === 1) sel.value = 'haSUI';
+  });
+});
