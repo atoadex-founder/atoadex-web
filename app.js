@@ -1,4 +1,4 @@
-// AtoaDEX v1.9.8 Canonical Frontend & Live Sui Testnet Bridge + Persistent Session
+// AtoaDEX v1.9.8 Canonical Frontend & Live Sui Testnet Bridge + Working veATOA
 const ATOADEX_TESTNET = {
   rpc: "https://" + "fullnode.testnet.sui.io:443",
   packageId: "0xf2fe78eb7c97df7323bb29d6abe74d055338cd3e02b949b23ed710cc43e69628",
@@ -7,6 +7,7 @@ const ATOADEX_TESTNET = {
 };
 
 let tsuiBalance = parseInt(localStorage.getItem('atoadex_tsui_bal') || '0', 10);
+let lockedVeAtoa = parseFloat(localStorage.getItem('atoadex_ve_bal') || '0');
 
 function claimTestnetTSui() {
   tsuiBalance += 1000;
@@ -69,9 +70,14 @@ function checkCircuitBreaker() {
 }
 
 function updateVeAtoa() {
-  const amt = parseFloat(document.getElementById('lockAmt')?.value) || 0;
+  const amtInput = document.getElementById('lockAmt') || document.querySelector('#panel-veatoa input');
+  const amt = parseFloat(amtInput?.value) || 0;
   const powerEl = document.getElementById('vePower');
-  if (powerEl) powerEl.innerText = amt.toLocaleString('en-US') + ' veATOA';
+  const totalDisplay = lockedVeAtoa > 0 ? lockedVeAtoa : amt;
+  if (powerEl) {
+    powerEl.innerHTML = `${totalDisplay.toLocaleString('en-US')} veATOA` +
+      (lockedVeAtoa > 0 ? ` <span style="font-size:0.75rem;color:#10b981;">(Locked &amp; Active)</span>` : '');
+  }
 }
 
 function applyWalletState(isConn) {
@@ -90,10 +96,23 @@ function toggleWallet() {
   const nextState = localStorage.getItem('atoadex_wallet_conn') !== '1';
   localStorage.setItem('atoadex_wallet_conn', nextState ? '1' : '0');
   applyWalletState(nextState);
-  executeDemo(nextState ? 'Sui Testnet Wallet connected & saved!' : 'Wallet disconnected.');
+  alert(nextState ? 'AtoaDEX v1.9.8: Sui Testnet Wallet connected & saved!' : 'AtoaDEX v1.9.8: Wallet disconnected.');
 }
 
 function executeDemo(msg) {
+  if (msg && msg.toLowerCase().includes('veatoa')) {
+    const amtInput = document.getElementById('lockAmt') || document.querySelector('#panel-veatoa input');
+    const amt = parseFloat(amtInput?.value) || 0;
+    if (amt <= 0) {
+      alert('Please enter an $ATOA amount greater than 0 to lock.');
+      return;
+    }
+    lockedVeAtoa += amt;
+    localStorage.setItem('atoadex_ve_bal', String(lockedVeAtoa));
+    updateVeAtoa();
+    alert(`🔒 Locked +${amt.toLocaleString('en-US')} $ATOA!\n\n• Total Active Voting Power: ${lockedVeAtoa.toLocaleString('en-US')} veATOA\n• Earning 20.00% Protocol Fee Share + Gauge Bribes!`);
+    return;
+  }
   alert('AtoaDEX v1.9.8: ' + msg);
 }
 
