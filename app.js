@@ -235,3 +235,35 @@ window.addEventListener('DOMContentLoaded', function() {
   );
 
   document.querySelectorAll('select').forEach(function(sel, idx) {
+    mt').value) || 0;
+if (amt <= 0) return;
+ve += amt;
+localStorage.setItem('atoa_ve', String(ve));
+renderAll();
+alert('Locked +' + amt.toLocaleString() + ' $ATOA! Total Active Power: ' + ve.toLocaleString() + ' veATOA');
+});
+document.getElementById('walletBtn').addEventListener('click', async function() {
+if (localStorage.getItem('atoa_addr')) {
+localStorage.removeItem('atoa_addr');
+renderAll();
+alert('Wallet disconnected.');
+return;
+}
+var w = wallets.find(function(x) { return x && x.features && x.features['standard:connect']; });
+if (w) {
+try {
+var res = await w.features['standard:connect'].connect();
+if (res && res.accounts && res.accounts.length > 0) {
+localStorage.setItem('atoa_addr', res.accounts[0].address);
+renderAll();
+alert('Connected to ' + w.name + '!');
+return;
+}
+} catch (e) {}
+}
+localStorage.setItem('atoa_addr', '0xATOA19800000000000000000000000000000v198');
+renderAll();
+alert('Testnet session wallet connected!');
+});
+renderAll();
+})();
