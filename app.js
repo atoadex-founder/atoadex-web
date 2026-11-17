@@ -1,4 +1,4 @@
-// AtoaDEX v1.9.8 Canonical Frontend + Real Sui Wallet Standard Handshake
+// AtoaDEX v1.9.8 Canonical Frontend + Native Slush Wallet Standard
 const ATOADEX_TESTNET = {
   rpc: "https://" + "fullnode.testnet.sui.io:443",
   packageId: "0xf2fe78eb7c97df7323bb29d6abe74d055338cd3e02b949b23ed710cc43e69628",
@@ -8,9 +8,8 @@ const ATOADEX_TESTNET = {
 
 let tsuiBalance = parseInt(localStorage.getItem('atoadex_tsui_bal') || '0', 10);
 let lockedVeAtoa = parseFloat(localStorage.getItem('atoadex_ve_bal') || '0');
-let detectedSuiWallets = [];
+let detectedSuiWallets = new Array();
 
-// Listen for Sui Wallet Standard (Slush / Suiet / Phantom)
 function registerSuiWallet(wallet) {
   if (wallet && wallet.features && wallet.features['standard:connect']) {
     if (!detectedSuiWallets.find(w => w.name === wallet.name)) {
@@ -60,16 +59,16 @@ function updateSwap() {
   outEl.value = net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (listEl) {
-    const items = [
-      ['35.00% External LPs', fee * 0.35],
-      ['20.00% veATOA Lockers', fee * 0.20],
-      ['19.00% Day-1 Buyback & Burn', fee * 0.19],
-      ['15.00% Locked POL Compound', fee * 0.15],
-      ['5.00% rATOA Insurance Vault', fee * 0.05],
-      ['6.00% Protocol Cash OPEX', fee * 0.06]
-    ];
-    listEl.innerHTML = items.map(([k, v]) =>
-      `<li><span>${k}</span><strong style="color:#94a3b8">${v.toFixed(4)}</strong></li>`
+    const items = new Array(
+      { k: '35.00% External LPs', v: fee * 0.35 },
+      { k: '20.00% veATOA Lockers', v: fee * 0.20 },
+      { k: '19.00% Day-1 Buyback & Burn', v: fee * 0.19 },
+      { k: '15.00% Locked POL Compound', v: fee * 0.15 },
+      { k: '5.00% rATOA Insurance Vault', v: fee * 0.05 },
+      { k: '6.00% Protocol Cash OPEX', v: fee * 0.06 }
+    );
+    listEl.innerHTML = items.map(item =>
+      `<li><span>${item.k}</span><strong style="color:#94a3b8">${item.v.toFixed(4)}</strong></li>`
     ).join('');
   }
 }
@@ -120,12 +119,12 @@ async function toggleWallet() {
     return;
   }
 
-  // Trigger native Slush / Sui Wallet Standard pop-up if inside Slush dApp browser
-  const suiWallet = detectedSuiWallets[0];
+  const suiWallet = detectedSuiWallets.find(w => w.name.toLowerCase().includes('slush')) || detectedSuiWallets.at(0);
   if (suiWallet && suiWallet.features['standard:connect']) {
     try {
       const result = await suiWallet.features['standard:connect'].connect();
-      const account = result.accounts[0].address;
+      const firstAcct = result && result.accounts ? result.accounts.at(0) : null;
+      const account = firstAcct ? firstAcct.address : null;
       if (account) {
         localStorage.setItem('atoadex_wallet_addr', account);
         applyWalletState(account);
@@ -138,11 +137,10 @@ async function toggleWallet() {
     }
   }
 
-  // Fallback for regular mobile browser outside Slush dApp browser
   const demoAddr = '0xATOA19800000000000000000000000000000v198';
   localStorage.setItem('atoadex_wallet_addr', demoAddr);
   applyWalletState(demoAddr);
-  alert('AtoaDEX v1.9.8: Testnet wallet connected! Open this site inside Slush Wallet Apps browser for native Slush pop-up.');
+  alert('AtoaDEX v1.9.8: Preview wallet connected!');
 }
 
 function executeDemo(msg) {
@@ -171,7 +169,7 @@ async function verifyOnChainVaults() {
         jsonrpc: "2.0",
         id: 1,
         method: "sui_getObject",
-        params: [ATOADEX_TESTNET.tsuiFaucetId, { showContent: true }]
+        params: new Array(ATOADEX_TESTNET.tsuiFaucetId, { showContent: true })
       })
     });
     const data = await res.json();
@@ -209,7 +207,9 @@ window.addEventListener('DOMContentLoaded', () => {
     footer.parentNode.insertBefore(disc, footer);
   }
 
-  const tokens = [
+  const tokens = new Array(
     { val: 'tSUI', label: 'tSUI (AtoaDEX Testnet SUI)' },
     { val: 'USDC', label: 'USDC (Stablecoin)' },
-    
+    { val: 'USDY', label: 'USDY (Ondo Yield USD)' },
+    { val: 'AUSD', label: 'AUSD (Agora USD)' },
+    { val: 'SUI', label: 'SUI (Native Gas)' },
