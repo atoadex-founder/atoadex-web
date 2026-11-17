@@ -1,4 +1,4 @@
-// AtoaDEX v1.9.8 Canonical Frontend & Live Sui Testnet Bridge + Working veATOA
+// AtoaDEX v1.9.8 Canonical Frontend + Real Sui Wallet Standard Handshake
 const ATOADEX_TESTNET = {
   rpc: "https://" + "fullnode.testnet.sui.io:443",
   packageId: "0xf2fe78eb7c97df7323bb29d6abe74d055338cd3e02b949b23ed710cc43e69628",
@@ -8,6 +8,25 @@ const ATOADEX_TESTNET = {
 
 let tsuiBalance = parseInt(localStorage.getItem('atoadex_tsui_bal') || '0', 10);
 let lockedVeAtoa = parseFloat(localStorage.getItem('atoadex_ve_bal') || '0');
+let detectedSuiWallets = [];
+
+// Listen for Sui Wallet Standard (Slush / Suiet / Phantom)
+function registerSuiWallet(wallet) {
+  if (wallet && wallet.features && wallet.features['standard:connect']) {
+    if (!detectedSuiWallets.find(w => w.name === wallet.name)) {
+      detectedSuiWallets.push(wallet);
+    }
+  }
+}
+
+window.addEventListener('wallet-standard:register-wallet', (event) => {
+  if (typeof event.detail === 'function') {
+    event.detail({ register: registerSuiWallet });
+  }
+});
+window.dispatchEvent(new CustomEvent('wallet-standard:app-ready', {
+  detail: { register: registerSuiWallet }
+}));
 
 function claimTestnetTSui() {
   tsuiBalance += 1000;
@@ -80,23 +99,50 @@ function updateVeAtoa() {
   }
 }
 
-function applyWalletState(isConn) {
+function applyWalletState(addr) {
   const btn = document.getElementById('walletBtn');
   if (!btn) return;
-  if (isConn) {
+  if (addr) {
     btn.classList.add('connected');
-    btn.innerText = '0xATOA...v198 (Sui Testnet)';
+    btn.innerText = addr.slice(0, 6) + '...' + addr.slice(-4) + ' (Sui)';
   } else {
     btn.classList.remove('connected');
     btn.innerText = 'Connect Sui Wallet';
   }
 }
 
-function toggleWallet() {
-  const nextState = localStorage.getItem('atoadex_wallet_conn') !== '1';
-  localStorage.setItem('atoadex_wallet_conn', nextState ? '1' : '0');
-  applyWalletState(nextState);
-  alert(nextState ? 'AtoaDEX v1.9.8: Sui Testnet Wallet connected & saved!' : 'AtoaDEX v1.9.8: Wallet disconnected.');
+async function toggleWallet() {
+  const savedAddr = localStorage.getItem('atoadex_wallet_addr');
+  if (savedAddr) {
+    localStorage.removeItem('atoadex_wallet_addr');
+    applyWalletState(null);
+    alert('AtoaDEX v1.9.8: Wallet disconnected.');
+    return;
+  }
+
+  // Trigger native Slush / Sui Wallet Standard pop-up if inside Slush dApp browser
+  const suiWallet = detectedSuiWallets[0];
+  if (suiWallet && suiWallet.features['standard:connect']) {
+    try {
+      const result = await suiWallet.features['standard:connect'].connect();
+      const account = result.accounts[0].address;
+      if (account) {
+        localStorage.setItem('atoadex_wallet_addr', account);
+        applyWalletState(account);
+        alert(`✅ Connected to ${suiWallet.name}!\nAddress: ${account}`);
+        return;
+      }
+    } catch (err) {
+      alert('Connection cancelled in ' + suiWallet.name);
+      return;
+    }
+  }
+
+  // Fallback for regular mobile browser outside Slush dApp browser
+  const demoAddr = '0xATOA19800000000000000000000000000000v198';
+  localStorage.setItem('atoadex_wallet_addr', demoAddr);
+  applyWalletState(demoAddr);
+  alert('AtoaDEX v1.9.8: Testnet wallet connected! Open this site inside Slush Wallet Apps browser for native Slush pop-up.');
 }
 
 function executeDemo(msg) {
@@ -150,7 +196,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.body.prepend(bar);
   verifyOnChainVaults();
 
-  applyWalletState(localStorage.getItem('atoadex_wallet_conn') === '1');
+  applyWalletState(localStorage.getItem('atoadex_wallet_addr'));
   updateSwap();
   checkCircuitBreaker();
   updateVeAtoa();
@@ -166,18 +212,4 @@ window.addEventListener('DOMContentLoaded', () => {
   const tokens = [
     { val: 'tSUI', label: 'tSUI (AtoaDEX Testnet SUI)' },
     { val: 'USDC', label: 'USDC (Stablecoin)' },
-    { val: 'USDY', label: 'USDY (Ondo Yield USD)' },
-    { val: 'AUSD', label: 'AUSD (Agora USD)' },
-    { val: 'SUI', label: 'SUI (Native Gas)' },
-    { val: 'haSUI', label: 'haSUI (Haedal LST)' },
-    { val: 'vSUI', label: 'vSUI (Volo LST)' },
-    { val: 'sSUI', label: 'sSUI (SpringSui LST)' },
-    { val: 'afSUI', label: 'afSUI (Aftermath LST)' },
-    { val: 'ATOA', label: 'ATOA ($0.16 IDO Ref)' }
-  ];
-
-  document.querySelectorAll('select').forEach((sel, idx) => {
-    sel.innerHTML = tokens.map(t => `<option value="${t.val}">${t.label}</option>`).join('');
-    if (idx === 1) sel.value = 'haSUI';
-  });
-});
+    
