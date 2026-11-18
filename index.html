@@ -177,27 +177,34 @@
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--muted);">Protocol Fee Dividend Share</span><span class="mono" style="color:var(--emerald);">10.00% of All Swap Fees</span></div>
           <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">External Gauge Bribe Share</span><span class="mono" style="color:var(--gold);">100.00% Paid Weekly</span></div>
         </div>
-        <button class="btn-primary" onclick="lockVeAtoa()">Lock $ATOA &amp; Activate Bribe Voting</button>
-        <div class="toast" id="veToast"></div>
-      </div>
-
-      <div id="tab-faucet" class="tab-pane">
-        <div style="background:#070b16;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;">
-          <div style="font-weight:800;font-size:14px;color:var(--gold);margin-bottom:6px;">🚰 Season 1 Testnet Multi-Token Gripo</div>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Claim free Sui assets in 1 click to test swaps, Stable-3Pool deposits, Sui LST routing, and the 10.00% Epoch Circuit Breaker:</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:14px;">
-            <div class="mono" style="background:var(--panel);padding:8px;border-radius:8px;">+1,000 tSUI</div>
-            <div class="mono" style="background:var(--panel);padding:8px;border-radius:8px;">+1,000 tUSDC</div>
-            <div class="mono" style="background:var(--panel);padding:8px;border-radius:8px;">+1,000 tUSDY</div>
-            <div class="mono" style="background:var(--panel);padding:8px;border-radius:8px;">+1,000 tAUSD</div>
-            <div class="mono" style="background:var(--panel);padding:8px;border-radius:8px;">+100 thaSUI / tvSUI</div>
-            <div class="mono" style="background:var(--panel);padding:8px;border-radius:8px;">+100 tsSUI / tafSUI</div>
-          </div>
-          <button class="btn-cyan" onclick="claimAllFaucet()">Claim Full Testnet Bundle (+500 AtoaXP)</button>
-        </div>
-        <div style="font-size:11px;color:var(--muted);text-align:center;">Live On-Chain TsuiFaucet Object: <a class="mono" href="https://suiscan.xyz" target="_blank">0x41b41fea...cbb83</a></div>
-        <div class="toast" id="faucetToast"></div>
-      </div>
+      async function connectSlush(){
+   const btn=document.getElementById('connectBtn');
+   const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+   try{
+     let wallets=window.getSuiWallets?window.getSuiWallets():[];
+     if(!wallets.length){await new Promise(r=>setTimeout(r,350));wallets=window.getSuiWallets?window.getSuiWallets():[];}
+     activeWallet=wallets.find(w=>w.name.toLowerCase().includes('slush'))||wallets;
+     if(activeWallet){
+       const res=await activeWallet.features['standard:connect'].connect();
+       activeAccount=res.accounts;
+       walletAddress=activeAccount.address;
+       btn.textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+       btn.classList.add('connected');
+       return showToast('tradeToast','LIVE CONNECTED ('+activeWallet.name+'): '+walletAddress.slice(0,10)+'...');
+     }
+     if(isMobile){
+       showToast('tradeToast','Redirecting to Slush Wallet App...');
+       window.location.href='https://slush.app;
+       return;
+     }
+   }catch(e){
+     return showToast('tradeToast','Slush Connect Error: '+(e.message||e),true);
+   }
+   walletAddress='0x04cb4f922afa2ffed4fb409cbdb4a06c0000f8a0';
+   btn.textContent='Demo: 0x04cb...f8a0';
+   btn.classList.add('connected');
+   showToast('tradeToast','No Sui browser extension detected — Preview Mode active.');
+ } 
     </section>
   </main>
     <footer class="footer"><strong>AtoaDEX v2.0.0 — Sui Institutional Release</strong> · Open-Source Move 2024 Smart Contracts · Testnet/Devnet tokens carry zero monetary value. Access restricted in sanctioned jurisdictions (OFAC / UN / EU / AMLA).</footer>
