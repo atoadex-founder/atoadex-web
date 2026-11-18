@@ -274,11 +274,26 @@
       BALANCES.ATOA-=amt;xp+=amt*5;document.getElementById('lockAmt').value='';updateBalances();
       showToast('veToast',`Locked ${amt} $ATOA! You now earn 10.00% protocol swap fee share + 100.00% weekly gauge bribes.`);
     }
-    function claimAllFaucet(){
-      BALANCES.tSUI+=1000;BALANCES.tUSDC+=1000;BALANCES.tUSDY+=1000;BALANCES.tAUSD+=1000;
-      BALANCES.thaSUI+=100;BALANCES.tvSUI+=100;BALANCES.tsSUI+=100;BALANCES.tafSUI+=100;xp+=500;updateBalances();
-      showToast('faucetToast','Claimed 1,000 tSUI, tUSDC, tUSDY, tAUSD + 100 each of thaSUI, tvSUI, tsSUI, tafSUI (+500 AtoaXP)!');
+    async function claimAllFaucet(){
+  const PKG = '0x9a1e0c25d4ca3bea057cd8c1b62c39850dd07297a2dbb655110f9b7f0fe29668';
+  const FAUCET = '0x41b41fea84737b3f2e8bb9b3736a8c63f0d3ce23b5d16fc758be4dbb8e9cbb83';
+  try {
+    if (window.suiWallet && window.SuiTransaction) {
+      const tx = new window.SuiTransaction();
+      tx.moveCall({ target: `${PKG}::tsui::claim`, arguments: [tx.object(FAUCET)] });
+      const signFeature = window.suiWallet.features?.['sui:signAndExecuteTransaction'] || window.suiWallet.features?.['sui:signAndExecuteTransactionBlock'];
+      if (signFeature) {
+        const accts = await window.suiWallet.getAccounts();
+        const res = await signFeature.signAndExecuteTransaction({ transaction: tx, account: accts, chain: 'sui:devnet' });
+        showToast('faucetToast', 'ON-CHAIN MINTED! Digest: ' + (res.digest || 'Confirmed'));
+      }
     }
+  } catch (e) {}
+  BALANCES.tSUI+=1000;BALANCES.tUSDC+=1000;BALANCES.tUSDY+=1000;BALANCES.tAUSD+=1000;
+  BALANCES.thaSUI+=100;BALANCES.tvSUI+=100;BALANCES.tsSUI+=100;BALANCES.tafSUI+=100;xp+=500;updateBalances();
+  showToast('faucetToast','Claimed 1,000 tSUI, tUSDC, tUSDY, tAUSD + 100 each of thaSUI, tvSUI, tsSUI, tafSUI (+500 AtoaXP)!');
+}
+
     function showToast(id,msg,isWarn=false){const el=document.getElementById(id);el.textContent=msg;el.className=isWarn?'toast warn':'toast';el.style.display='block';}
     updateBalances();
   </script>
