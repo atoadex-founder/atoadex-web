@@ -222,16 +222,37 @@
           <input type="number" id="lockAmt" placeholder="Amount of ATOA to lock" min="0" oninput="calcVeAtoa()" />
           <div style="margin-top:12px;">
             <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Lock Duration: <strong id="lockWeeksLabel" style="color:var(--gold);">52 Weeks (1.0 Yrs)</strong></span><span class="mono" id="vePowerEst">0.00 veATOA</span></div>
-            <input type="range" id="lockWeeks" min="4" max="208" value="52" style="width:100%;" oninput="calcVeAtoa()" />
-          </div>
-        </div>
-        <div style="background:#070b16;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--muted);">Protocol Fee Dividend Share</span><span class="mono" style="color:var(--emerald);">10.00% of All Swap Fees</span></div>
-          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">External Gauge Bribe Share</span><span class="mono" style="color:var(--gold);">100.00% Paid Weekly</span></div>
-        </div>
-        <button class="btn-primary" onclick="lockVeAtoa()">Lock $ATOA &amp; Activate Bribe Voting</button>
-        <div class="toast" id="veToast"></div>
-      </div>
+                async function executeSwap(){
+      const amt=parseFloat(document.getElementById('payAmt').value)||0,pTok=document.getElementById('payToken').value,rTok=document.getElementById('recvToken').value;
+      if(amt<=0||isNaN(amt))return showToast('tradeToast','Enter a valid positive amount.',true);
+      if(pTok===rTok)return showToast('tradeToast','Select two different tokens.',true);
+      if(amt>BALANCES[pTok])return showToast('tradeToast','Insufficient '+pTok+' balance. Claim from Gripo tab first!',true);
+
+      const PKG='0x9a1e0c25d4ca3bea057cd8c1b62c39850dd07297a2dbb655110f9b7f0fe29668';
+      const BREAKER='0x6eb802e5b5323bc1057c2dd33f4ab2be3b4e7a0831f773b8619ec09e1c3c2fd29';
+      let onChainDigest = null;
+
+      try {
+        if (activeWallet && activeAccount && window.SuiTransaction) {
+          const tx = new window.SuiTransaction();
+          const mistAmt = BigInt(Math.floor(amt * 1_000_000));
+          tx.moveCall({
+            target: `${PKG}::circuit_breaker::record_outflow`,
+            arguments: [tx.object(BREAKER), tx.pure.u64(mistAmt), tx.object('0x6')]
+          });
+          const signFn = activeWallet.features['sui:signAndExecuteTransaction'] || activeWallet.features['sui:signAndExecuteTransactionBlock'];
+          const res = await signFn.signAndExecuteTransaction({ transaction: tx, account: activeAccount, chain: 'sui:devnet' });
+          onChainDigest = res.digest || 'Confirmed';
+        }
+      } catch (e) {
+        return showToast('tradeToast', 'Swap rejected/error in wallet: ' + (e.message || e), true);
+      }
+
+      const out=parseFloat(document.getElementById('recvAmt').value),usdVal=amt*PRICES[pTok];
+      BALANCES[pTok]-=amt;BALANCES[rTok]+=out;xp+=usdVal*10;document.getElementById('payAmt').value='';updateBalances();
+      const tag = onChainDigest ? ` [ON-CHAIN TX: ${onChainDigest.slice(0,10)}...]` : ' [Simulation]';
+      showToast('tradeToast',`Swapped ${amt} ${pTok} → ${out.toFixed(4)} ${rTok} (0.08% fee: 29% Burn, 35% LP, 10% veATOA) +${Math.round(usdVal*10)} AtoaXP!${tag}`);
+    }
 
       <div id="tab-faucet" class="tab-pane">
         <div style="background:#070b16;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;">
