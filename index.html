@@ -1,328 +1,290 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AtoaDEX v2.0.0 — Institutional Sui Hybrid Vault &amp; Trading Terminal</title>
-  <script type="module">
-    import { Transaction } from "https://esm.sh";
-    import { getWallets } from "https://esm.sh";
-    window.SuiTransaction = Transaction;
-    window.getSuiWallets = () => getWallets().get().filter(w => w.chains && w.chains.some(c => c.startsWith('sui:')));
-  </script>
-  <style>
-    :root{--bg:#060913;--panel:#0d1424;--panel-alt:#121b30;--border:#1e293b;--gold:#f59e0b;--gold-soft:rgba(245,158,11,0.14);--cyan:#38bdf8;--cyan-soft:rgba(56,189,248,0.14);--emerald:#10b981;--danger:#ef4444;--text:#f8fafc;--muted:#94a3b8;}
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:radial-gradient(circle at top right,#0f1b38 0%,var(--bg) 52%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;min-height:100vh;line-height:1.45;}
-    a{color:var(--cyan);text-decoration:none;} a:hover{text-decoration:underline;}
-    .top-strip{background:#090e1d;border-bottom:1px solid var(--border);padding:8px 16px;font-size:12px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;}
-    .badge-live{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.14);color:var(--emerald);border:1px solid rgba(16,185,129,0.35);padding:2px 8px;border-radius:999px;font-weight:600;}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;}
-    .navbar{max-width:1240px;margin:0 auto;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
-    .brand{display:flex;align-items:center;gap:10px;}
-    .brand-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#d97706);color:#060913;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:18px;}
-    .brand-title{font-size:20px;font-weight:800;} .brand-sub{font-size:11px;color:var(--gold);font-weight:600;text-transform:uppercase;}
-    .btn-wallet{background:linear-gradient(135deg,var(--gold),#d97706);color:#060913;border:none;padding:10px 18px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;}
-    .btn-wallet.connected{background:var(--panel-alt);color:var(--cyan);border:1px solid var(--cyan);}
-    .container{max-width:1240px;margin:0 auto;padding:10px 20px 48px;display:grid;grid-template-columns:1fr 1.25fr;gap:22px;}
-    @media(max-width:920px){.container{grid-template-columns:1fr;}}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px;}
-    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-    .card-title{font-size:13px;font-weight:700;text-transform:uppercase;color:var(--gold);}
-    .telemetry-stack{display:flex;flex-direction:column;gap:16px;}
-    .metric-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(30,41,59,0.7);font-size:13px;}
-    .metric-row:last-child{border-bottom:none;} .metric-label{color:var(--muted);} .metric-val{font-weight:700;}
-    .progress-wrap{background:#070b16;border:1px solid var(--border);border-radius:999px;height:12px;overflow:hidden;margin:8px 0;}
-    .progress-fill{height:100%;background:linear-gradient(90deg,var(--emerald),var(--gold));width:12%;transition:width 0.3s ease;}
-    .pill-gold{background:var(--gold-soft);color:var(--gold);border:1px solid rgba(245,158,11,0.35);padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;}
-    .pill-cyan{background:var(--cyan-soft);color:var(--cyan);border:1px solid rgba(56,189,248,0.35);padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;}
-    .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#070b16;padding:6px;border-radius:12px;border:1px solid var(--border);margin-bottom:18px;}
-    .tab-btn{background:transparent;border:none;color:var(--muted);padding:10px 6px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;}
-    .tab-btn.active{background:var(--panel-alt);color:var(--gold);border:1px solid rgba(245,158,11,0.4);}
-    .tab-pane{display:none;} .tab-pane.active{display:block;}
-    .input-box{background:#070b16;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
-    .input-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px;}
-    .input-main{display:flex;justify-content:space-between;align-items:center;gap:10px;}
-    input[type="number"],select{background:var(--panel-alt);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:15px;font-weight:700;outline:none;}
-    input[type="number"]{width:100%;} select{min-width:120px;cursor:pointer;}
-    .btn-primary{width:100%;background:linear-gradient(135deg,var(--gold),#d97706);color:#060913;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px;}
-    .btn-cyan{width:100%;background:linear-gradient(135deg,var(--cyan),#0284c7);color:#060913;border:none;padding:13px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;}
-    .btn-outline{background:var(--panel-alt);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;}
-    .pool-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-    .pool-card{background:#070b16;border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;}
-    .pool-card.selected{border-color:var(--gold);background:rgba(245,158,11,0.06);}
-    .toast{margin-top:12px;padding:12px;border-radius:10px;font-size:12px;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.35);color:var(--cyan);display:none;}
-    .toast.warn{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.4);color:#fca5a5;}
-    .footer{max-width:1240px;margin:0 auto;padding:20px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);text-align:center;}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AtoaDEX v2.0.0</title>
+<style>
+:root{--bg:#060913;--panel:#0d1424;--alt:#121b30;--bd:#1e293b;--gold:#f59e0b;--cyan:#38bdf8;--em:#10b981;--red:#ef4444;--tx:#f8fafc;--mu:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(circle at top right,#0f1b38,var(--bg) 52%);color:var(--tx);font-family:-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh;line-height:1.45}
+a{color:var(--cyan);text-decoration:none}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.strip{background:#090e1d;border-bottom:1px solid var(--bd);padding:8px 16px;font-size:12px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.live{background:rgba(16,185,129,.14);color:var(--em);border:1px solid rgba(16,185,129,.35);padding:2px 8px;border-radius:99px;font-weight:600}
+.nav{max-width:1240px;margin:0 auto;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#d97706);color:#060913;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:18px}
+.sub{font-size:11px;color:var(--gold);font-weight:600;text-transform:uppercase}
+.bw{background:linear-gradient(135deg,var(--gold),#d97706);color:#060913;border:0;padding:10px 18px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer}
+.bw.on{background:var(--alt);color:var(--cyan);border:1px solid var(--cyan)}
+.wrap{max-width:1240px;margin:0 auto;padding:10px 20px 40px;display:grid;grid-template-columns:1fr 1.25fr;gap:22px}
+@media(max-width:920px){.wrap{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:16px;padding:20px}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px}
+.ct{font-size:13px;font-weight:700;text-transform:uppercase;color:var(--gold)}
+.row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(30,41,59,.7);font-size:13px}
+.row:last-child{border:0}.row span:first-child{color:var(--mu)}.row span:last-child{font-weight:700;text-align:right}
+.bar{background:#070b16;border:1px solid var(--bd);border-radius:99px;height:12px;overflow:hidden;margin:8px 0}
+.bar div{height:100%;width:12%;background:linear-gradient(90deg,var(--em),var(--gold))}
+.pg,.pc{background:rgba(245,158,11,.14);color:var(--gold);border:1px solid rgba(245,158,11,.35);padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700}
+.pc{background:rgba(56,189,248,.14);color:var(--cyan);border-color:rgba(56,189,248,.35)}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#070b16;padding:6px;border-radius:12px;border:1px solid var(--bd);margin-bottom:18px}
+.tb{background:0;border:1px solid transparent;color:var(--mu);padding:10px 4px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer}
+.tb.on{background:var(--alt);color:var(--gold);border-color:rgba(245,158,11,.4)}
+.pane{display:none}.pane.on{display:block}
+.box{background:#070b16;border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-bottom:8px;gap:8px}
+.main{display:flex;gap:10px;align-items:center}
+input,select{background:var(--alt);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:15px;font-weight:700;outline:0}
+input[type=number]{width:100%}select{min-width:110px}
+.bp{width:100%;background:linear-gradient(135deg,var(--gold),#d97706);color:#060913;border:0;padding:14px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;margin-top:8px}
+.bo{background:var(--alt);color:var(--tx);border:1px solid var(--bd);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+.pools{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.pool{background:#070b16;border:1px solid var(--bd);border-radius:10px;padding:12px;cursor:pointer;font-size:12px}
+.pool.sel{border-color:var(--gold);background:rgba(245,158,11,.06)}
+.info{background:#070b16;border:1px solid var(--bd);border-radius:10px;padding:12px;font-size:12px;margin-bottom:10px}
+.toast{margin-top:12px;padding:12px;border-radius:10px;font-size:12px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.35);color:var(--cyan);display:none;word-break:break-word}
+.toast.w{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:#fca5a5}
+.foot{max-width:1240px;margin:0 auto;padding:20px;border-top:1px solid var(--bd);font-size:11px;color:var(--mu);text-align:center}
+</style>
 </head>
 <body>
-  <div class="top-strip">
-    <div>
-      <span class="badge-live">● SUI LIVE</span>
-      <span style="margin-left:8px;color:var(--muted);">Package:</span>
-      <a class="mono" href="https://suiscan.xyz" target="_blank">0x9a1e0c25...29668 ↗</a>
-      <span style="margin-left:8px;color:var(--muted);">Faucet:</span>
-      <a class="mono" href="https://suiscan.xyz" target="_blank">0x41b41fea...cbb83 ↗</a>
-    </div>
-    <div><a href="https://github.com" target="_blank">GitHub Contracts</a> · <a href="https://lovable.app" target="_blank">dApp Kit Mirror</a></div>
+<div class="strip">
+ <div><span class="live">● SUI TESTNET</span> <span style="color:var(--mu)">Package:</span> <a class="mono" href="https://suiscan.xyz/testnet" target="_blank">0x9a1e0c25...29668 ↗</a></div>
+ <div><span id="realBal" class="mono" style="color:var(--em)"></span></div>
+</div>
+<header class="nav">
+ <div class="brand"><div class="logo">A</div><div><div style="font-size:20px;font-weight:800">AtoaDEX <span style="font-size:12px;color:var(--cyan)">v2.0.0</span></div><div class="sub">Insured Hybrid Vault &amp; Trading Terminal</div></div></div>
+ <div style="display:flex;gap:10px;align-items:center"><span class="pg mono" id="xpBadge">0 AtoaXP (3.0x)</span><button class="bw" id="cb" onclick="connect()">Connect Slush Wallet</button></div>
+</header>
+
+<main class="wrap">
+<section class="col">
+ <div class="card">
+  <div class="ch"><span class="ct">🛡 Live Epoch Outflow Shield</span><span class="pg">10% CAP ACTIVE</span></div>
+  <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--mu)">Current Epoch Outflow Used</span><span class="mono" style="color:var(--em);font-weight:700">1.20% / 10.00%</span></div>
+  <div class="bar"><div></div></div>
+  <p style="font-size:12px;color:var(--mu)"><b>90% of pool TVL is un-drainable</b> within a single epoch. Withdrawals above 10% route to the <b>24-Hour Whale Queue</b>.</p>
+ </div>
+ <div class="card">
+  <div class="ch"><span class="ct">🏛 rATOA Stablecoin Vault</span><span class="pc">100% STABLE FLOOR</span></div>
+  <div class="row"><span>Reserve Composition</span><span class="mono">50% USDC · 35% USDY · 15% AUSD</span></div>
+  <div class="row"><span>Ondo USDY Yield</span><span style="color:var(--em)">~4.50% APY</span></div>
+  <div class="row"><span>Fee Insurance Inflow</span><span class="mono">5% of 0.08% Fee</span></div>
+ </div>
+ <div class="card">
+  <div class="ch"><span class="ct">🔥 Hyper-Deflation &amp; Cap</span><span class="pg">FROZEN TREASURYCAP</span></div>
+  <div class="row"><span>Immutable Hard Cap</span><span class="mono">100,000,000 $ATOA</span></div>
+  <div class="row"><span>Buyback &amp; Burn</span><span class="mono" style="color:var(--gold)">29% of Every Swap Fee</span></div>
+  <div class="row"><span>Price-Gated POL</span><span class="mono">70% ($0.16 Locked)</span></div>
+  <div class="row"><span>Founder Vesting</span><span class="mono">5% (4-Yr / 1-Yr Cliff)</span></div>
+ </div>
+</section>
+
+<section class="card">
+ <div class="tabs">
+  <button class="tb on" onclick="tab('trade',this)">Trade</button>
+  <button class="tb" onclick="tab('pools',this)">Pools &amp; LP</button>
+  <button class="tb" onclick="tab('ve',this)">veATOA</button>
+  <button class="tb" onclick="tab('faucet',this)">Gripo (Faucet)</button>
+ </div>
+
+ <div id="p-trade" class="pane on">
+  <div class="box"><div class="top"><span>You Pay</span><span>Balance: <b class="mono" id="payBal">0.00</b> <a href="javascript:void(0)" onclick="maxPay()">MAX</a></span></div>
+   <div class="main"><input type="number" id="payAmt" placeholder="0.00" min="0" oninput="quote()"><select id="payTok" onchange="quote()"></select></div></div>
+  <div style="text-align:center;margin:-6px 0 8px"><button class="bo" onclick="flip()">↑↓ Flip Pair</button></div>
+  <div class="box"><div class="top"><span>You Receive (After 0.08% Fee)</span><span>Balance: <b class="mono" id="recBal">0.00</b></span></div>
+   <div class="main"><input type="number" id="recAmt" placeholder="0.00" readonly><select id="recTok" onchange="quote()"></select></div></div>
+  <div class="info">
+   <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px"><span style="color:var(--mu)">Fee Split (0.08%)</span><span class="mono">35% LP · 29% Burn · 10% veATOA</span></div>
+   <div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">Season 1 Points</span><span class="mono" style="color:var(--gold)" id="xpEst">+0 AtoaXP</span></div>
   </div>
-  <header class="navbar">
-    <div class="brand">
-      <div class="brand-logo">A</div>
-      <div><div class="brand-title">AtoaDEX <span style="font-size:12px;color:var(--cyan);">v2.0.0</span></div><div class="brand-sub">Insured Hybrid Vault &amp; Trading Terminal</div></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span class="pill-gold mono" id="xpBadge">0 AtoaXP (3.0x)</span>
-      <button class="btn-wallet" id="connectBtn" onclick="connectSlush()">Connect Slush Wallet</button>
-    </div>
-  </header>
+  <button class="bp" onclick="swap()">Execute Swap</button>
+  <div class="toast" id="t-trade"></div>
+ </div>
 
-  <main class="container">
-    <section class="telemetry-stack">
-      <div class="card">
-        <div class="card-header"><span class="card-title">🛡 Live Epoch Outflow Shield</span><span class="pill-gold">10.00% CAP ACTIVE</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--muted);">Current Epoch Outflow Used</span><span class="mono" id="epochUsedText" style="color:var(--emerald);font-weight:700;">1.20% / 10.00%</span></div>
-        <div class="progress-wrap"><div class="progress-fill" id="epochBar"></div></div>
-        <p style="font-size:12px;color:var(--muted);margin-top:6px;"><strong>90.00% of pool TVL is mathematically un-drainable</strong> within any single epoch. Withdrawals exceeding 10.00% of pool TVL automatically route to the <strong>24-Hour Same-Address Whale Queue</strong>.</p>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">🏛 rATOA Stablecoin Vault</span><span class="pill-cyan">100% STABLECOIN FLOOR</span></div>
-        <div class="metric-row"><span class="metric-label">Reserve Composition</span><span class="metric-val mono">50% USDC · 35% USDY · 15% AUSD</span></div>
-        <div class="metric-row"><span class="metric-label">Ondo USDY Treasury Yield</span><span class="metric-val" style="color:var(--emerald);">~4.50% APY (24/7 Passive)</span></div>
-        <div class="metric-row"><span class="metric-label">Swap Fee Insurance Inflow</span><span class="metric-val mono">5.00% of 0.08% Fee</span></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">🔥 Hyper-Deflation &amp; Supply Cap</span><span class="pill-gold">FROZEN TREASURYCAP</span></div>
-        <div class="metric-row"><span class="metric-label">Immutable Hard Cap</span><span class="metric-val mono">100,000,000 $ATOA</span></div>
-        <div class="metric-row"><span class="metric-label">Automated Buyback &amp; Burn</span><span class="metric-val mono" style="color:var(--gold);">29.00% of Every Swap Fee</span></div>
-        <div class="metric-row"><span class="metric-label">Sovereign Price-Gated POL</span><span class="metric-val mono">70.00% ($0.16 Price-Locked)</span></div>
-        <div class="metric-row"><span class="metric-label">Solo Founder Vesting</span><span class="metric-val mono">5.00% (4-Yr / 1-Yr Cliff)</span></div>
-      </div>
-    </section>
+ <div id="p-pools" class="pane">
+  <div style="font-size:12px;color:var(--mu);margin-bottom:8px">Select pool (3.0x Genesis AtoaXP Boost):</div>
+  <div class="pools" id="poolList"></div>
+  <div class="box"><div class="top"><span>Pair: <b id="pairLbl" style="color:var(--gold)"></b></span><span>TVL: <b class="mono">$250,000</b></span></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input type="number" id="lpA" placeholder="Token A amount" min="0"><input type="number" id="lpB" placeholder="Token B amount" min="0"></div>
+   <button class="bp" onclick="addLP()">Add Liquidity (+3.0x AtoaXP)</button></div>
+  <div class="box"><div class="top"><span>Your LP Position</span><span class="mono" id="lpVal" style="color:var(--em)">$0.00</span></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button class="bo" onclick="wdLP()">Withdraw LP (0% Fee ✓)</button>
+    <button class="bo" style="border-color:var(--red);color:#fca5a5" onclick="whale()">Simulate 25% Whale Drain</button></div>
+   <div style="margin-top:10px;font-size:12px;color:var(--mu)">24-Hour Whale Queue: <b class="mono" id="queue">Empty</b></div></div>
+  <div class="toast" id="t-pools"></div>
+ </div>
 
-    <section class="card">
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('trade',this)">Trade</button>
-        <button class="tab-btn" onclick="switchTab('pools',this)">Pools &amp; LP</button>
-        <button class="tab-btn" onclick="switchTab('veatoa',this)">veATOA</button>
-        <button class="tab-btn" onclick="switchTab('faucet',this)">Gripo (Faucet)</button>
-      </div>
+ <div id="p-ve" class="pane">
+  <div class="box"><div class="top"><span>Lock $ATOA for voting power</span><span>Available: <b class="mono" id="atoaAv">0 ATOA</b></span></div>
+   <input type="number" id="lockAmt" placeholder="Amount of ATOA" min="0" oninput="ve()">
+   <div style="margin-top:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Lock: <b id="wkLbl" style="color:var(--gold)"></b></span><span class="mono" id="veEst">0.00 veATOA</span></div>
+   <input type="range" id="wk" min="4" max="208" value="52" style="width:100%" oninput="ve()"></div></div>
+  <div class="info">
+   <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--mu)">Fee Dividend Share</span><span class="mono" style="color:var(--em)">10% of All Swap Fees</span></div>
+   <div style="display:flex;justify-content:space-between"><span style="color:var(--mu)">Your locked veATOA</span><b class="mono" id="veTot">0.00</b></div>
+  </div>
+  <button class="bp" onclick="lock()">Lock ATOA</button>
+  <div class="toast" id="t-ve"></div>
+ </div>
 
-      <div id="tab-trade" class="tab-pane active">
-        <div class="input-box">
-          <div class="input-top"><span>You Pay</span><span>Balance: <strong class="mono" id="payBal">0.00</strong> <a href="javascript:void(0)" onclick="setMaxPay()">MAX</a></span></div>
-          <div class="input-main">
-            <input type="number" id="payAmt" placeholder="0.00" min="0" oninput="calcQuote()" />
-            <select id="payToken" onchange="updateBalances()">
-              <option value="tSUI">tSUI</option><option value="tUSDC">tUSDC</option><option value="tUSDY">tUSDY</option><option value="tAUSD">tAUSD</option>
-              <option value="thaSUI">thaSUI</option><option value="tvSUI">tvSUI</option><option value="tsSUI">tsSUI</option><option value="tafSUI">tafSUI</option><option value="ATOA">ATOA</option>
-            </select>
-          </div>
-        </div>
-        <div style="text-align:center;margin:-6px 0 8px;"><button class="btn-outline" onclick="flipTokens()">↑↓ Flip Pair</button></div>
-        <div class="input-box">
-          <div class="input-top"><span>You Receive (After 0.08% Fee)</span><span>Balance: <strong class="mono" id="recvBal">0.00</strong></span></div>
-          <div class="input-main">
-            <input type="number" id="recvAmt" placeholder="0.00" readonly />
-            <select id="recvToken" onchange="updateBalances()">
-              <option value="tUSDC">tUSDC</option><option value="ATOA">ATOA</option><option value="tSUI">tSUI</option><option value="tUSDY">tUSDY</option><option value="tAUSD">tAUSD</option><option value="thaSUI">thaSUI</option>
-            </select>
-          </div>
-        </div>
-        <div style="background:#070b16;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--muted);">Protocol Fee Split (0.08%)</span><span class="mono">35% LP · 29% Burn · 10% veATOA</span></div>
-          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Season 1 Points Reward</span><span class="mono" style="color:var(--gold);" id="swapXpEst">+0 AtoaXP</span></div>
-        </div>
-        <button class="btn-primary" onclick="executeSwap()">Execute Swap</button>
-        <div class="toast" id="tradeToast"></div>
-      </div>
-            <div id="tab-pools" class="tab-pane">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Select Liquidity Pool Pair (3.0x Genesis AtoaXP Boost):</div>
-        <div class="pool-grid">
-          <div class="pool-card selected" onclick="selectPool('tSUI','tUSDC','18.4%',this)"><div style="font-weight:800;font-size:13px;">tSUI / tUSDC</div><div style="color:var(--emerald);font-size:12px;font-weight:700;">18.4% APY · 3.0x XP</div></div>
-          <div class="pool-card" onclick="selectPool('tUSDC','tUSDY','7.8%',this)"><div style="font-weight:800;font-size:13px;">Stable-3Pool (USDC/USDY)</div><div style="color:var(--cyan);font-size:12px;font-weight:700;">7.8% Treasury APY · Zero IL</div></div>
-          <div class="pool-card" onclick="selectPool('tSUI','thaSUI','11.2%',this)"><div style="font-weight:800;font-size:13px;">tSUI / thaSUI (LST)</div><div style="color:var(--emerald);font-size:12px;font-weight:700;">11.2% Triple Yield</div></div>
-          <div class="pool-card" onclick="selectPool('tSUI','ATOA','42.5%',this)"><div style="font-weight:800;font-size:13px;">tSUI / ATOA</div><div style="color:var(--gold);font-size:12px;font-weight:700;">42.5% APY · 3.0x XP</div></div>
-        </div>
-        <div class="input-box">
-          <div class="input-top"><span>Deposit Pair: <strong id="selectedPairLabel" style="color:var(--gold);">tSUI / tUSDC (18.4%)</strong></span><span>Pool TVL: <strong class="mono">$250,000</strong></span></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <input type="number" id="lpAmtA" placeholder="Token A Amt (e.g. 100)" min="0" />
-            <input type="number" id="lpAmtB" placeholder="Token B Amt (e.g. 350)" min="0" />
-          </div>
-          <button class="btn-primary" onclick="addLiquidityPair()">Add Pair Liquidity (+3.0x AtoaXP)</button>
-        </div>
-        <div class="input-box" style="margin-top:12px;">
-          <div class="input-top"><span>Your Active LP Position</span><span class="mono" id="lpPositionVal" style="color:var(--emerald);">$0.00</span></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-            <button class="btn-outline" onclick="withdrawLP(100)">Withdraw My LP (0% Fee ✓)</button>
-            <button class="btn-outline" style="border-color:var(--danger);color:#fca5a5;" onclick="simulateWhaleDrain()">Simulate 25% Pool Whale Drain</button>
-          </div>
-          <div style="margin-top:10px;font-size:12px;color:var(--muted);">24-Hour Whale Exit Queue: <strong class="mono" id="queueStatus">Empty</strong></div>
-        </div>
-        <div class="toast" id="poolToast"></div>
-      </div>
+ <div id="p-faucet" class="pane">
+  <div class="info">Kuha og libre nga testnet tokens. Walay tinuod nga bili.</div>
+  <button class="bp" onclick="faucet()">Claim Test Tokens</button>
+  <div class="toast" id="t-faucet"></div>
+ </div>
+</section>
+</main>
+<footer class="foot"><b>AtoaDEX v2.0.0</b> · Testnet tokens carry zero monetary value. Access restricted in sanctioned jurisdictions (OFAC / UN / EU / AMLA).</footer>
 
-      <div id="tab-veatoa" class="tab-pane">
-        <div class="input-box">
-          <div class="input-top"><span>Lock $ATOA for Voting Power &amp; Bribes</span><span>Available: <strong class="mono" id="atoaAvail">0.00 ATOA</strong></span></div>
-          <input type="number" id="lockAmt" placeholder="Amount of ATOA to lock" min="0" oninput="calcVeAtoa()" />
-          <div style="margin-top:12px;">
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Lock Duration: <strong id="lockWeeksLabel" style="color:var(--gold);">52 Weeks (1.0 Yrs)</strong></span><span class="mono" id="vePowerEst">0.00 veATOA</span></div>
-            <input type="range" id="lockWeeks" min="4" max="208" value="52" style="width:100%;" oninput="calcVeAtoa()" />
-          </div>
-        </div>
-        <div style="background:#070b16;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:var(--muted);">Protocol Fee Dividend Share</span><span class="mono" style="color:var(--emerald);">10.00% of All Swap Fees</span></div>
-          <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">External Gauge Bribe Share</span><span class="mono" style="color:var(--gold);">100.00% Paid Weekly</span></div>
-        </div>
-      async function connectSlush(){
-   const btn=document.getElementById('connectBtn');
-   const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-   try{
-     let wallets=window.getSuiWallets?window.getSuiWallets():[];
-     if(!wallets.length){await new Promise(r=>setTimeout(r,350));wallets=window.getSuiWallets?window.getSuiWallets():[];}
-     activeWallet=wallets.find(w=>w.name.toLowerCase().includes('slush'))||wallets;
-     if(activeWallet){
-       const res=await activeWallet.features['standard:connect'].connect();
-       activeAccount=res.accounts;
-       walletAddress=activeAccount.address;
-       btn.textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
-       btn.classList.add('connected');
-       return showToast('tradeToast','LIVE CONNECTED ('+activeWallet.name+'): '+walletAddress.slice(0,10)+'...');
-     }
-     if(isMobile){
-       showToast('tradeToast','Redirecting to Slush Wallet App...');
-       window.location.href='https://slush.app;
-       return;
-     }
-   }catch(e){
-     return showToast('tradeToast','Slush Connect Error: '+(e.message||e),true);
-   }
-   walletAddress='0x04cb4f922afa2ffed4fb409cbdb4a06c0000f8a0';
-   btn.textContent='Demo: 0x04cb...f8a0';
-   btn.classList.add('connected');
-   showToast('tradeToast','No Sui browser extension detected — Preview Mode active.');
- } 
-    </section>
-  </main>
-    <footer class="footer"><strong>AtoaDEX v2.0.0 — Sui Institutional Release</strong> · Open-Source Move 2024 Smart Contracts · Testnet/Devnet tokens carry zero monetary value. Access restricted in sanctioned jurisdictions (OFAC / UN / EU / AMLA).</footer>
+<script>
+// ===== CONFIG: ibutang dinhi ang tinuod nimo nga contract =====
+const CFG={chain:'sui:testnet',rpc:'https://fullnode.testnet.sui.io:443',
+  FAUCET_TARGET:'' /* e.g. '0x41b41fea...::faucet::claim' */};
 
-  <script>
-    const PRICES={tSUI:3.50,tUSDC:1.00,tUSDY:1.05,tAUSD:1.00,thaSUI:3.65,tvSUI:3.62,tsSUI:3.60,tafSUI:3.64,ATOA:0.16};
-    const BALANCES={tSUI:0,tUSDC:0,tUSDY:0,tAUSD:0,thaSUI:0,tvSUI:0,tsSUI:0,tafSUI:0,ATOA:500};
-    let xp=0,lpUsd=0,queuedUsd=0,activePair=['tSUI','tUSDC'],walletAddress=null,activeWallet=null,activeAccount=null;
+const P={tSUI:3.5,tUSDC:1,tUSDY:1.05,tAUSD:1,thaSUI:3.65,ATOA:.16};
+const TOK=Object.keys(P),FEE=.0008;
+const POOLS=[['tSUI','tUSDC','18.4%'],['tUSDC','tUSDY','7.8%'],['tSUI','thaSUI','11.2%'],['tSUI','ATOA','42.5%']];
+const $=id=>document.getElementById(id);
+const L=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
+let B=L('atoaB',{tSUI:0,tUSDC:0,tUSDY:0,tAUSD:0,thaSUI:0,ATOA:500});
+let xp=L('atoaXP',0),lp=L('atoaLP',0),veLocked=L('atoaVE',0),pool=0;
+let wallet=null,account=null;
+const save=()=>{try{localStorage.setItem('atoaB',JSON.stringify(B));localStorage.setItem('atoaXP',xp);localStorage.setItem('atoaLP',lp);localStorage.setItem('atoaVE',veLocked)}catch(e){}};
+const f=(n,d=2)=>Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+function toast(id,msg,warn){const t=$('t-'+id);t.textContent=msg;t.className='toast'+(warn?' w':'');t.style.display='block'}
+function tab(n,el){document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));el.classList.add('on');$('p-'+n).classList.add('on');render()}
 
-    async function connectSlush(){
-      const btn=document.getElementById('connectBtn');
-      const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      try{
-        const wallets=window.getSuiWallets?window.getSuiWallets():[];
-        activeWallet=wallets.find(w=>w.name.toLowerCase().includes('slush'))||wallets;
-        if(activeWallet){
-          const res=await activeWallet.features['standard:connect'].connect();
-          activeAccount=res.accounts;walletAddress=activeAccount.address;
-          btn.textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);btn.classList.add('connected');
-          return showToast('tradeToast','Connected ('+activeWallet.name+'): '+walletAddress.slice(0,10)+'...');
-        }
-        if(isMobile){window.location.href=`https://slush.app{encodeURIComponent(window.location.href)}`;return;}
-      }catch(e){}
-      walletAddress='0x04cb4f922afa2ffed4fb409cbdb4a06c0000f8a0';btn.textContent='Demo: 0x04cb...f8a0';btn.classList.add('connected');
-      showToast('tradeToast','Preview Wallet Active (Open in Slush Apps browser for live signing)');
+/* ---------- WALLET ---------- */
+async function connect(){
+  const btn=$('cb');
+  const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  try{
+    const {getWallets}=await import('https://esm.sh/@wallet-standard/app');
+    const find=()=>getWallets().get().filter(w=>w.chains.some(c=>c.startsWith('sui:'))&&w.features['standard:connect']);
+    let ws=find();
+    if(!ws.length){await new Promise(r=>setTimeout(r,800));ws=find()}
+    wallet=ws.find(w=>/slush/i.test(w.name))||ws[0];
+    if(!wallet){
+      if(mobile){
+        toast('trade','Walay wallet sa browser. Ablihon ang Slush app...',true);
+        setTimeout(()=>{location.href='https://my.slush.app/browse/'+encodeURIComponent(location.href)},1200);
+      }else toast('trade','Walay Sui wallet nakit-an. I-install ang Slush extension.',true);
+      return;
     }
-    function switchTab(name,el){
-      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-      el.classList.add('active');document.getElementById('tab-'+name).classList.add('active');updateBalances();
+    const r=await wallet.features['standard:connect'].connect();
+    account=(r.accounts&&r.accounts[0])||(wallet.accounts&&wallet.accounts[0]);
+    if(!account)throw new Error('Walay account nga gibalik');
+    btn.textContent=account.address.slice(0,6)+'...'+account.address.slice(-4);
+    btn.classList.add('on');
+    toast('trade','Connected: '+wallet.name);
+    realBal();
+  }catch(e){toast('trade','Connect error: '+(e.message||e),true)}
+}
+async function realBal(){
+  try{
+    const r=await fetch(CFG.rpc,{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({jsonrpc:'2.0',id:1,method:'suix_getBalance',params:[account.address,'0x2::sui::SUI']})});
+    const j=await r.json();
+    $('realBal').textContent='Wallet: '+f(Number(j.result.totalBalance)/1e9,4)+' SUI (testnet)';
+  }catch(e){}
+}
+async function liveTx(build){
+  if(!account)throw new Error('I-connect una ang wallet');
+  const {Transaction}=await import('https://esm.sh/@mysten/sui/transactions');
+  const tx=new Transaction();build(tx);
+  const feat=wallet.features['sui:signAndExecuteTransaction'];
+  if(!feat)throw new Error('Dili suportado sa wallet');
+  return feat.signAndExecuteTransaction({transaction:tx,account,chain:CFG.chain});
+}
+
+/* ---------- TRADE ---------- */
+function fill(){
+  [$('payTok'),$('recTok')].forEach((s,i)=>{s.innerHTML=TOK.map(t=>`<option>${t}</option>`).join('');s.value=i?'tUSDC':'tSUI'});
+  $('poolList').innerHTML=POOLS.map((p,i)=>`<div class="pool${i?'':' sel'}" onclick="selPool(${i})"><b>${p[0]} / ${p[1]}</b><div style="color:var(--em);font-weight:700">${p[2]} APY · 3.0x XP</div></div>`).join('');
+}
+function quote(){
+  const a=$('payTok').value,b=$('recTok').value,n=+$('payAmt').value||0;
+  const out=a===b?0:n*P[a]/P[b]*(1-FEE);
+  $('recAmt').value=out?out.toFixed(4):'';
+  $('xpEst').textContent='+'+Math.round(n*P[a]*10)+' AtoaXP';
+  render();
+}
+function flip(){const a=$('payTok').value;$('payTok').value=$('recTok').value;$('recTok').value=a;quote()}
+function maxPay(){$('payAmt').value=B[$('payTok').value];quote()}
+function swap(){
+  const a=$('payTok').value,b=$('recTok').value,n=+$('payAmt').value;
+  if(a===b)return toast('trade','Pili og lahi nga token.',true);
+  if(!(n>0))return toast('trade','Butangi ang amount.',true);
+  if(n>B[a])return toast('trade','Kulang ang balance. Kuhaa sa Faucet.',true);
+  const out=n*P[a]/P[b]*(1-FEE),gain=Math.round(n*P[a]*10);
+  B[a]-=n;B[b]+=out;xp+=gain;save();
+  $('payAmt').value='';quote();
+  toast('trade',`[SIMULATION] Swapped ${n} ${a} → ${f(out,4)} ${b} (0.08% fee: 29% Burn, 35% LP, 10% veATOA) +${gain} AtoaXP`);
+}
+
+/* ---------- POOLS ---------- */
+function selPool(i){pool=i;document.querySelectorAll('.pool').forEach((e,j)=>e.classList.toggle('sel',i===j));render()}
+function addLP(){
+  const [a,b]=POOLS[pool],x=+$('lpA').value,y=+$('lpB').value;
+  if(!(x>0&&y>0))return toast('pools','Butangi ang duha ka amount.',true);
+  if(x>B[a]||y>B[b])return toast('pools','Kulang ang balance.',true);
+  const usd=x*P[a]+y*P[b];
+  B[a]-=x;B[b]-=y;lp+=usd;xp+=Math.round(usd*3);save();
+  $('lpA').value=$('lpB').value='';render();
+  toast('pools','[SIMULATION] Added $'+f(usd)+' liquidity. +'+Math.round(usd*3)+' AtoaXP');
+}
+function wdLP(){
+  if(lp<=0)return toast('pools','Walay LP nga ma-withdraw.',true);
+  B.tUSDC+=lp;toast('pools','[SIMULATION] Gi-withdraw $'+f(lp)+' (0% fee) → tUSDC');lp=0;save();render();
+}
+function whale(){
+  $('queue').textContent='25% of pool queued · 24h delay';
+  toast('pools','Ang withdrawal nga molapas sa 10% TVL naa sa 24-Hour Whale Queue.',true);
+}
+
+/* ---------- veATOA ---------- */
+function ve(){
+  const w=+$('wk').value,n=+$('lockAmt').value||0;
+  $('wkLbl').textContent=w+' Weeks ('+(w/52).toFixed(1)+' Yrs)';
+  $('veEst').textContent=f(n*w/208)+' veATOA';
+}
+function lock(){
+  const n=+$('lockAmt').value,w=+$('wk').value;
+  if(!(n>0)||n>B.ATOA)return toast('ve','Sayop o kulang ang ATOA.',true);
+  B.ATOA-=n;veLocked+=n*w/208;save();$('lockAmt').value='';ve();render();
+  toast('ve','[SIMULATION] Gi-lock ang '+n+' ATOA para sa '+w+' ka semana.');
+}
+
+/* ---------- FAUCET ---------- */
+async function faucet(){
+  try{
+    if(CFG.FAUCET_TARGET){
+      toast('faucet','Palihog aprobahi sa wallet...');
+      const r=await liveTx(tx=>tx.moveCall({target:CFG.FAUCET_TARGET,arguments:[]}));
+      return toast('faucet','LIVE tx OK: '+(r.digest||'success'));
     }
-    function updateBalances(){
-      const pTok=document.getElementById('payToken').value,rTok=document.getElementById('recvToken').value;
-      document.getElementById('payBal').textContent=BALANCES[pTok].toFixed(2);document.getElementById('recvBal').textContent=BALANCES[rTok].toFixed(2);
-      document.getElementById('atoaAvail').textContent=BALANCES.ATOA.toFixed(2)+' ATOA';document.getElementById('xpBadge').textContent=Math.round(xp).toLocaleString()+' AtoaXP (3.0x)';
-      document.getElementById('lpPositionVal').textContent='$'+lpUsd.toFixed(2);calcQuote();
-    }
-    function setMaxPay(){document.getElementById('payAmt').value=BALANCES[document.getElementById('payToken').value];calcQuote();}
-    function flipTokens(){const p=document.getElementById('payToken'),r=document.getElementById('recvToken'),t=p.value;p.value=r.value;r.value=t;updateBalances();}
-    function calcQuote(){
-      const amt=parseFloat(document.getElementById('payAmt').value)||0,pTok=document.getElementById('payToken').value,rTok=document.getElementById('recvToken').value;
-      if(amt<=0){document.getElementById('recvAmt').value='';document.getElementById('swapXpEst').textContent='+0 AtoaXP';return;}
-      const usdVal=amt*PRICES[pTok],out=(usdVal*0.9992)/PRICES[rTok];
-      document.getElementById('recvAmt').value=out.toFixed(4);document.getElementById('swapXpEst').textContent='+'+Math.round(usdVal*10)+' AtoaXP';
-    }
-    async function executeSwap(){
-      const amt=parseFloat(document.getElementById('payAmt').value)||0,pTok=document.getElementById('payToken').value,rTok=document.getElementById('recvToken').value;
-      if(amt<=0||isNaN(amt))return showToast('tradeToast','Enter a valid positive amount.',true);
-      if(pTok===rTok)return showToast('tradeToast','Select two different tokens.',true);
-      if(amt>BALANCES[pTok])return showToast('tradeToast','Insufficient '+pTok+' balance. Claim from Gripo tab first!',true);
-      const PKG='0x9a1e0c25d4ca3bea057cd8c1b62c39850dd07297a2dbb655110f9b7f0fe29668',BREAKER='0x6eb802e5b5323bc1057c2dd33f4ab2be3b4e7a0831f773b8619ec09e1c3c2fd29';
-      let tag='';
-      try{
-        if(activeWallet&&activeAccount&&window.SuiTransaction){
-          const tx=new window.SuiTransaction();
-          tx.moveCall({target:`${PKG}::circuit_breaker::record_outflow`,arguments:[tx.object(BREAKER),tx.pure.u64(BigInt(Math.floor(amt*1000000))),tx.object('0x6')]});
-          const signFn=activeWallet.features['sui:signAndExecuteTransaction']||activeWallet.features['sui:signAndExecuteTransactionBlock'];
-          const res=await signFn.signAndExecuteTransaction({transaction:tx,account:activeAccount,chain:'sui:devnet'});
-          tag=` [ON-CHAIN TX: ${(res.digest||'OK').slice(0,10)}...]`;
-        }
-      }catch(e){return showToast('tradeToast','Wallet rejected/error: '+(e.message||e),true);}
-      const out=parseFloat(document.getElementById('recvAmt').value),usdVal=amt*PRICES[pTok];
-      BALANCES[pTok]-=amt;BALANCES[rTok]+=out;xp+=usdVal*10;document.getElementById('payAmt').value='';updateBalances();
-      showToast('tradeToast',`Swapped ${amt} ${pTok} → ${out.toFixed(4)} ${rTok} (0.08% fee: 29% Burn, 35% LP, 10% veATOA) +${Math.round(usdVal*10)} AtoaXP!${tag}`);
-    }
-    function selectPool(tokA,tokB,apy,card){
-      activePair=[tokA,tokB];document.querySelectorAll('.pool-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');
-      document.getElementById('selectedPairLabel').textContent=`${tokA} / ${tokB} (${apy})`;
-    }
-    function addLiquidityPair(){
-      const a=parseFloat(document.getElementById('lpAmtA').value)||0,b=parseFloat(document.getElementById('lpAmtB').value)||0,[tokA,tokB]=activePair;
-      if(a<=0||b<=0)return showToast('poolToast','Enter positive amounts for both tokens in the pair.',true);
-      if(a>BALANCES[tokA]||b>BALANCES[tokB])return showToast('poolToast',`Insufficient ${tokA} or ${tokB} balance. Claim from Gripo tab!`,true);
-      BALANCES[tokA]-=a;BALANCES[tokB]-=b;const addedUsd=(a*PRICES[tokA])+(b*PRICES[tokB]);lpUsd+=addedUsd;const earnedXp=addedUsd*30;xp+=earnedXp;
-      document.getElementById('lpAmtA').value='';document.getElementById('lpAmtB').value='';updateBalances();
-      showToast('poolToast',`Added $${addedUsd.toFixed(2)} to ${tokA}/${tokB} Pool! Earned +${Math.round(earnedXp)} Genesis AtoaXP (3.0x).`);
-    }
-    function withdrawLP(pct){
-      if(lpUsd<=0)return showToast('poolToast','No active LP position to withdraw.',true);
-      const reqUsd=lpUsd*(pct/100);lpUsd-=reqUsd;BALANCES.tUSDC+=reqUsd;updateBalances();
-      showToast('poolToast',`100% Instant Withdrawal (0.00% Fee): $${reqUsd.toFixed(2)} returned immediately as tUSDC!`);
-    }
-    function simulateWhaleDrain(){
-      const instant=25000,queued=37500;queuedUsd+=queued;
-      document.getElementById('epochUsedText').textContent='10.00% / 10.00% (TRIPPED)';document.getElementById('epochUsedText').style.color='#ef4444';
-      document.getElementById('epochBar').style.width='100%';document.getElementById('queueStatus').textContent=`$${queuedUsd.toLocaleString()} Locked (24h Same-Address Return Lock)`;
-      document.getElementById('queueStatus').style.color='#f59e0b';
-      showToast('poolToast',`10.00% EPOCH CIRCUIT BREAKER TRIPPED on $62,500 (25% Pool Drain)! $${instant.toLocaleString()} max released; $${queued.toLocaleString()} locked in 24h Whale Queue.`,true);
-    }
-    function calcVeAtoa(){
-      const amt=parseFloat(document.getElementById('lockAmt').value)||0,wks=parseInt(document.getElementById('lockWeeks').value)||52;
-      document.getElementById('lockWeeksLabel').textContent=`${wks} Weeks (${(wks/52).toFixed(1)} Yrs)`;
-      document.getElementById('vePowerEst').textContent=(amt*(wks/208)).toFixed(2)+' veATOA';
-    }
-    function lockVeAtoa(){
-      const amt=parseFloat(document.getElementById('lockAmt').value)||0;
-      if(amt<=0||amt>BALANCES.ATOA)return showToast('veToast','Enter a valid $ATOA amount within your balance.',true);
-      BALANCES.ATOA-=amt;xp+=amt*5;document.getElementById('lockAmt').value='';updateBalances();
-      showToast('veToast',`Locked ${amt} $ATOA! You now earn 10.00% protocol swap fee share + 100.00% weekly gauge bribes.`);
-    }
-    async function claimAllFaucet(){
-      const PKG='0x9a1e0c25d4ca3bea057cd8c1b62c39850dd07297a2dbb655110f9b7f0fe29668',FAUCET='0x41b41fea84737b3f2e8bb9b3736a8c63f0d3ce23b5d16fc758be4dbb8e9cbb83';
-      let tag='';
-      try{
-        if(activeWallet&&activeAccount&&window.SuiTransaction){
-          const tx=new window.SuiTransaction();
-          tx.moveCall({target:`${PKG}::tsui::claim`,arguments:[tx.object(FAUCET)]});
-          const signFn=activeWallet.features['sui:signAndExecuteTransaction']||activeWallet.features['sui:signAndExecuteTransactionBlock'];
-          const res=await signFn.signAndExecuteTransaction({transaction:tx,account:activeAccount,chain:'sui:devnet'});
-          tag=` [ON-CHAIN MINTED: ${(res.digest||'OK').slice(0,10)}...]`;
-        }
-      }catch(e){return showToast('faucetToast','Wallet rejected/error: '+(e.message||e),true);}
-      BALANCES.tSUI+=1000;BALANCES.tUSDC+=1000;BALANCES.tUSDY+=1000;BALANCES.tAUSD+=1000;
-      BALANCES.thaSUI+=100;BALANCES.tvSUI+=100;BALANCES.tsSUI+=100;BALANCES.tafSUI+=100;xp+=500;updateBalances();
-      showToast('faucetToast','Claimed 1,000 tSUI, tUSDC, tUSDY, tAUSD + 100 each of thaSUI, tvSUI, tsSUI, tafSUI (+500 AtoaXP)!' + tag);
-    }
-    function showToast(id,msg,isWarn=false){const el=document.getElementById(id);el.textContent=msg;el.className=isWarn?'toast warn':'toast';el.style.display='block';}
-    updateBalances();
-  </script>
+    B.tSUI+=100;B.tUSDC+=1000;B.tUSDY+=500;B.tAUSD+=500;B.thaSUI+=100;save();render();
+    toast('faucet','[SIMULATION] Nakuha: 100 tSUI, 1000 tUSDC, 500 tUSDY, 500 tAUSD, 100 thaSUI');
+  }catch(e){toast('faucet','Faucet error: '+(e.message||e),true)}
+}
+
+/* ---------- RENDER ---------- */
+function render(){
+  const a=$('payTok').value,b=$('recTok').value;
+  $('payBal').textContent=f(B[a]);$('recBal').textContent=f(B[b]);
+  $('xpBadge').textContent=f(xp,0)+' AtoaXP (3.0x)';
+  $('pairLbl').textContent=POOLS[pool][0]+' / '+POOLS[pool][1]+' ('+POOLS[pool][2]+')';
+  $('lpA').placeholder=POOLS[pool][0]+' amount';$('lpB').placeholder=POOLS[pool][1]+' amount';
+  $('lpVal').textContent='$'+f(lp);
+  $('atoaAv').textContent=f(B.ATOA)+' ATOA';
+  $('veTot').textContent=f(veLocked);
+}
+fill();ve();quote();
+</script>
 </body>
 </html>
