@@ -1,0 +1,21 @@
+<script type="module">
+import { registerSlushWallet } from "https://esm.sh/@mysten/slush-wallet@1.0.5";
+import { getWallets } from "https://esm.sh/@wallet-standard/app";
+
+// i-run una sa tanan, isa ra ka higayon
+registerSlushWallet("AtoaDEX");
+
+async function connectSlush() {
+  const wallets = getWallets().get();
+  const slush = wallets.find(w => w.name.toLowerCase().includes("slush"));
+  if (!slush) { alert("Wala makita ang Slush wallet"); return; }
+  const { accounts } = await slush.features["standard:connect"].connect();
+  const address = accounts[0].address;
+  document.getElementById("walletAddr").textContent = address;
+}
+
+document.getElementById("connectBtn").onclick = connectSlush;
+</script>
+
+<button id="connectBtn">Connect Slush Wallet</button>
+<span id="walletAddr"></span>
