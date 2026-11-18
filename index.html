@@ -1,10 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script type="module">
-  import { Transaction } from "https://esm.sh";
-  window.SuiTransaction = Transaction;
-  </script>
+    let activeWallet = null, activeAccount = null;
+
+    async function connectSlush(){
+      const btn = document.getElementById('connectBtn');
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      try {
+        const wallets = window.getSuiWallets ? window.getSuiWallets() : [];
+        activeWallet = wallets.find(w => w.name.toLowerCase().includes('slush')) || wallets;
+        if (activeWallet) {
+          const res = await activeWallet.features['standard:connect'].connect();
+          activeAccount = res.accounts;
+          walletAddress = activeAccount.address;
+          btn.textContent = walletAddress.slice(0,6) + '...' + walletAddress.slice(-4);
+          btn.classList.add('connected');
+          return showToast('tradeToast', 'Connected (' + activeWallet.name + '): ' + walletAddress.slice(0,10) + '...');
+        }
+        if (isMobile) {
+          const dappUrl = encodeURIComponent(window.location.href);
+          showToast('tradeToast', 'Opening Slush Wallet App for mobile signing...');
+          window.location.href = `https://slush.app{dappUrl}`;
+          return;
+        }
+      } catch (e) {}
+      walletAddress = '0x04cb4f922afa2ffed4fb409cbdb4a06c0000f8a0';
+      btn.textContent = 'Demo: 0x04cb...f8a0';
+      btn.classList.add('connected');
+      showToast('tradeToast', 'Desktop Preview Wallet Active (Install Slush extension for live signing)');
+    }
+
+    async function claimAllFaucet(){
+      const PKG = '0x9a1e0c25d4ca3bea057cd8c1b62c39850dd07297a2dbb655110f9b7f0fe29668';
+      const FAUCET = '0x41b41fea84737b3f2e8bb9b3736a8c63f0d3ce23b5d16fc758be4dbb8e9cbb83';
+      try {
+        if (!activeWallet || !activeAccount) {
+          const wallets = window.getSuiWallets ? window.getSuiWallets() : [];
+          activeWallet = wallets.find(w => w.name.toLowerCase().includes('slush')) || wallets;
+          if (activeWallet) {
+            const res = await activeWallet.features['standard:connect'].connect();
+            activeAccount = res.accounts;
+            walletAddress = activeAccount.address;
+          }
+        }
+        if (activeWallet && activeAccount && window.SuiTransaction) {
+          const tx = new window.SuiTransaction();
+          tx.moveCall({ target: `${PKG}::tsui::claim`, arguments: [tx.object(FAUCET)] });
+          const signFn = activeWallet.features['sui:signAndExecuteTransaction'] || activeWallet.features['sui:signAndExecuteTransactionBlock'];
+          const res = await signFn.signAndExecuteTransaction({ transaction: tx, account: activeAccount, chain: 'sui:devnet' });
+          BALANCES.tSUI+=1000;BALANCES.tUSDC+=1000;BALANCES.tUSDY+=1000;BALANCES.tAUSD+=1000;
+          BALANCES.thaSUI+=100;BALANCES.tvSUI+=100;BALANCES.tsSUI+=100;BALANCES.tafSUI+=100;xp+=500;updateBalances();
+          return showToast('faucetToast', 'ON-CHAIN MINTED! Digest: ' + (res.digest || 'Confirmed'));
+        }
+      } catch (e) {
+        return showToast('faucetToast', 'Wallet prompt cancelled/error: ' + (e.message || e), true);
+      }
+      BALANCES.tSUI+=1000;BALANCES.tUSDC+=1000;BALANCES.tUSDY+=1000;BALANCES.tAUSD+=1000;
+      BALANCES.thaSUI+=100;BALANCES.tvSUI+=100;BALANCES.tsSUI+=100;BALANCES.tafSUI+=100;xp+=500;updateBalances();
+      showToast('faucetToast', 'Claimed 1,000 tSUI, tUSDC, tUSDY, tAUSD + 100 each of thaSUI, tvSUI, tsSUI, tafSUI (+500 AtoaXP)!');
+    }
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AtoaDEX v2.0.0 — Institutional Sui Hybrid Vault &amp; Trading Terminal</title>
